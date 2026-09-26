@@ -1,0 +1,61 @@
+# 生产环境覆盖（docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build）
+# 生产纪律：数据库/Redis 不暴露公网端口、日志轮转防撑爆磁盘、API 只绑本机回环 + 反向代理接入
+
+services:
+  app:
+    ports:
+      - "127.0.0.1:8000:8000"     # 只绑本机，外面经 nginx/网关转发
+    environment:
+      - ENV=production
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/config/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  celery-worker:
+    environment:
+      - ENV=production
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    ports: []      # 数据库不对宿主机暴露：只有同网络内的 app/worker 能连
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    ports: []
+    command: redis-server --appendonly yes    # 生产开 AOF 持久化
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  flower:
+    ports:
+      - "127.0.0.1:5555:5555"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"

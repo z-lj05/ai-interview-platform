@@ -1,0 +1,48 @@
+# 开发环境覆盖（docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build）
+# 覆盖文件机制：与基础文件按服务合并，同键后者胜。dev 只写"和开发不同的那部分"
+#
+# 关键差异：容器里 app/worker 要连的是 compose 自己的 postgres/redis 服务（服务名即域名：
+# app-network 里 "postgres" 这个名字能被 DNS 解析到该容器），所以必须覆盖
+# DATABASE_URL / REDIS_HOST——.env 里指向 localhost 的值在容器里是"容器自己"，必炸。
+
+services:
+  postgres:
+    # 基础文件已有端口 5434:5432 与默认口令，这里不再重复
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: ai-interview:dev
+    ports:
+      - "8006:8006"
+    environment:
+      - ENV=development
+      - API_PORT=8006                                    # 环境变量优先于 .env 文件
+      - DATABASE_URL=postgresql+asyncpg://demo:demo123@postgres:5432/ai_interview
+      - REDIS_HOST=redis
+    volumes:
+      - ./app:/app/app       # 热更：改本机代码即时生效（开发核心体验）
+      - ./logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    image: ai-interview:dev
+    environment:
+      - ENV=development
+      - DATABASE_URL=postgresql+asyncpg://demo:demo123@postgres:5432/ai_interview
+      - REDIS_HOST=redis
+    volumes:
+      - ./app:/app/app
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started

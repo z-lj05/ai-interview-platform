@@ -1,0 +1,13 @@
+# 不进镜像的东西（构建上下文瘦身 + 别把垃圾/密钥以外测试文件带进生产）
+__pycache__/
+*.pyc
+*.log
+*.db
+.venv/
+.env   # 密钥不进镜像：运行时靠 compose env_file 从宿主机注入
+test_*.py
+demo_*.py
+check_*.py
+celerybeat-schedule.db
+.git/
+logs/

@@ -1,0 +1,42 @@
+# ── 依赖与虚拟环境（体积大头，不入库）──────────────────────────
+.venv/
+venv/
+node_modules/
+.tools/
+
+# ── Python ─────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# ── 前端构建产物 ────────────────────────────────────────────
+dist/
+build/
+
+# ── 密钥与本地配置（★ 最重要的一条）────────────────────────
+# .env 里放的是真的 API key，任何时候都不要提交
+.env
+.env.*
+!.env.example
+
+# ── 运行期数据（上传的文件、日志、本地库）────────────────────
+backend/uploads/
+backend/logs/
+*.log
+*.db
+*.sqlite3
+
+# ── 编辑器 / 系统 ───────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ── 脚手架自带说明 / 学习练习 / 废文件（不入库）────────────────
+admin/README.md
+frontend/README.md
+backend/test.txt
+js_lesson/

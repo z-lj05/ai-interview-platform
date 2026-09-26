@@ -1,0 +1,127 @@
+# 基础编排（所有环境共用骨架）
+# 使用方式：
+#   开发: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+#   生产: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# 有意没做的两件事：
+#  - nginx 段：证书和 nginx.conf 属于部署环境的私产，不进库；bind mount 一个不存在的
+#    文件会让服务直接起不来，所以本仓库不编 nginx
+#  - celery-beat 段：beat 是"定时任务调度器"。本项目 Celery 任务全由 API 侧 delay 触发、
+#    没有定时任务，起了也是空转，故不编
+# 端口选 5434/6382 是为了避开本机已占用的 5432/6379，两套环境可以共存
+
+services:
+  # FastAPI 应用
+  app:
+    build: .
+    image: ai-interview:prod
+    container_name: ai-interview-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - ENV=production
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # 健康检查 = 定时问"活没活"；compose 用端口映射值（dev=8006），prod 覆盖文件里改
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8006/api/v1/config/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery Worker
+  celery-worker:
+    build: .
+    image: ai-interview:prod
+    container_name: ai-interview-celery-worker
+    restart: unless-stopped
+    # Linux 容器里不需要 --pool=solo（solo 是给没有 fork 的 Windows 用的）
+    command: celery -A app.core.celery_app worker --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - ENV=production
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+  # PostgreSQL（pgvector 官方镜像：自带 vector 扩展）
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ai-interview-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-demo}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-demo123}
+      - POSTGRES_DB=${POSTGRES_DB:-ai_interview}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-demo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis（缓存 + Celery broker）
+  redis:
+    image: redis:7-alpine
+    container_name: ai-interview-redis
+    restart: unless-stopped
+    ports:
+      - "6382:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flower（Celery 监控面板，可选：docker compose --profile monitoring up -d）
+  flower:
+    image: ai-interview:prod
+    container_name: ai-interview-flower
+    restart: unless-stopped
+    command: celery -A app.core.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    networks:
+      - app-network
+    depends_on:
+      - redis
+      - celery-worker
+    profiles:
+      - monitoring
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
