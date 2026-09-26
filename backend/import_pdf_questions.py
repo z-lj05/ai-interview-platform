@@ -2,7 +2,8 @@
 
 链路：本地文件 → parse_question_file 切题 → POST /batch-import → Celery 向量化
 
-用法（在 backend 目录下）：../.venv/Scripts/python import_pdf_questions.py
+用法（在 backend 目录下）：
+    python import_pdf_questions.py <要导入的 PDF 文件路径>
 
 切题逻辑**不在本文件**：它住在 app/services/common/question_parser.py，
 管理端「批量导入题目 → 方式一：上传文件」调的是同一个函数——
@@ -16,6 +17,7 @@
 """
 import logging
 import os
+import sys
 
 import httpx
 
@@ -24,7 +26,6 @@ from app.services.common.question_parser import build_items, parse_question_file
 # pdfminer 对某些 PDF 会刷 FontBBox 警告，静音处理（不影响提取结果）
 logging.getLogger("pdfminer").setLevel(logging.ERROR)
 
-FILE_PATH = r"C:\Users\zenglingjiang\Downloads\Nginx 面试题速记通关版 _ 面试刷题 mianshiya.com.pdf"
 BASE_URL = "http://localhost:8000"
 ADMIN_EMAIL = "a@new.com"
 ADMIN_PASSWORD = "123456"
@@ -36,10 +37,15 @@ SOURCE = "pdf-import"
 
 
 def main():
+    if len(sys.argv) < 2:
+        print("用法: python import_pdf_questions.py <要导入的 PDF 文件路径>")
+        return
+    file_path = sys.argv[1]
+
     # ① 读文件 → 切题
-    with open(FILE_PATH, "rb") as f:
+    with open(file_path, "rb") as f:
         file_bytes = f.read()
-    result = parse_question_file(os.path.basename(FILE_PATH), file_bytes)
+    result = parse_question_file(os.path.basename(file_path), file_bytes)
     parsed = result["parsed"]
     print(f"[1/3] 读取文件：{len(file_bytes)} 字节，切题方式 = {result['strategy']}")
     print(f"[2/3] 切出 {len(parsed)} 道题")

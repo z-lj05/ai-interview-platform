@@ -2,7 +2,8 @@
 
 链路：本地 .md → parse_question_file 切题 → POST /batch-import → Celery 向量化
 
-用法（在 backend 目录下）：../.venv/Scripts/python import_md_questions.py
+用法（在 backend 目录下）：
+    python import_md_questions.py <要导入的 .md 文件路径>
 
 与 import_pdf_questions.py 只差几个常量——切题逻辑同住
 app/services/common/question_parser.py，和管理端页面共用。
@@ -17,12 +18,12 @@ app/services/common/question_parser.py，和管理端页面共用。
 前置：后端服务运行中（8000）；管理端账号可登录。
 """
 import os
+import sys
 
 import httpx
 
 from app.services.common.question_parser import build_items, parse_question_file
 
-FILE_PATH = r"D:\桌面\ai-interview-agent\ai-interview-agent\AI面试项目问答清单.md"
 BASE_URL = "http://localhost:8000"
 ADMIN_EMAIL = "a@new.com"
 ADMIN_PASSWORD = "123456"
@@ -34,10 +35,15 @@ SOURCE = "project-qa"             # 来源标记
 
 
 def main():
+    if len(sys.argv) < 2:
+        print("用法: python import_md_questions.py <要导入的 .md 文件路径>")
+        return
+    file_path = sys.argv[1]
+
     # ① 读文件 → 切题
-    with open(FILE_PATH, "rb") as f:
+    with open(file_path, "rb") as f:
         file_bytes = f.read()
-    result = parse_question_file(os.path.basename(FILE_PATH), file_bytes)
+    result = parse_question_file(os.path.basename(file_path), file_bytes)
     parsed = result["parsed"]
     print(f"[1/3] 读取文件：{len(file_bytes)} 字节，切题方式 = {result['strategy']}")
     print(f"[2/3] 切出 {len(parsed)} 道题")
