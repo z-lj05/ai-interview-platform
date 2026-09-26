@@ -1,7 +1,9 @@
-"""接口压测 —— 拿真实的 QPS 与延迟分布（简历量化用，数字是多少就报多少）
+"""接口压测 —— 取真实的 QPS 与延迟分布
 
-用法（在 D:\\桌面\\项目 目录下，后端 8000 需在跑）：
-    .venv/Scripts/python load_test.py
+用法（后端需已在 8000 端口跑起来，且库里有数据）：
+    python load_test.py
+
+    改压测目标：见下方的 TARGETS / CONCURRENCY / DURATION
 
 为什么不用 hey / wrk：
     本机没装，而且它们压不了带 Bearer 鉴权的接口。httpx + asyncio 三十行就够，
