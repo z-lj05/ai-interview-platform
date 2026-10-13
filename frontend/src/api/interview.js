@@ -1,6 +1,6 @@
 import api from './request'
 
-// 步 20/21：列表/删除/发起/提交答案(流式)/报告/消息
+// 面试模块接口：列表 / 删除 / 发起 / 提交答案(流式) / 报告 / 消息
 export function startInterview(data) {
   return api.post('/interviews/start', data)
 }

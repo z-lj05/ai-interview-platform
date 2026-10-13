@@ -35,8 +35,9 @@ backend/logs/
 .DS_Store
 Thumbs.db
 
-# ── 脚手架自带说明 / 学习练习 / 废文件（不入库）────────────────
+# ── 脚手架自带说明 / 本地笔记 / 废文件（不入库）────────────────
 admin/README.md
 frontend/README.md
 backend/test.txt
 js_lesson/
+启动说明.md

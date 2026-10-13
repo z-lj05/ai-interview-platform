@@ -9,7 +9,6 @@ const routes = [
   { path: '/interview/:id', name: 'Interview', component: () => import('../views/Interview.vue'), meta: { auth: true } },
   { path: '/interview/:id/report', name: 'Report', component: () => import('../views/Report.vue'), meta: { auth: true } },
   { path: '/', redirect: '/dashboard' }
-  // 步 22/收尾按正主补路由：/profile /position-match（全带 meta.auth）
 ]
 
 const router = createRouter({

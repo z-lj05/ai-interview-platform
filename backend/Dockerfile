@@ -1,4 +1,4 @@
-# 生产镜像（对齐正主 Dockerfile，裁剪 default-libmysqlclient-dev → libpq-dev：本项目是 PostgreSQL）
+# 生产镜像：Python 3.12-slim + gcc / libpq-dev（asyncpg 构建依赖）
 # 用法：docker compose -f docker-compose.yml -f docker-compose.prod.yml build
 FROM python:3.12-slim
 

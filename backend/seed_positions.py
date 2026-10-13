@@ -1,4 +1,4 @@
-"""重建岗位模板数据（管理端接口，9c 复习）"""
+"""重建岗位模板数据（管理端接口用）"""
 import json
 import urllib.request
 

@@ -1,6 +1,6 @@
 import api from './request'
 
-// 步 20 ResumeUpload 用：上传简历 + 查询解析详情（轮询）
+// 简历接口：上传简历 + 查询解析详情（轮询用）
 // （getResumes 列表无页面用，不搭）
 
 export function uploadResume(file, targetPosition) {
